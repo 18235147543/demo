@@ -7,5 +7,7 @@ import org.springframework.stereotype.Controller;
  */
 @Controller
 public class ServerController {
+    public void  server(String msg){
 
+    }
 }
