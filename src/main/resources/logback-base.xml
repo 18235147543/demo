@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<included>
+    <springProperty name="SPRING_APPLICATION_NAME" source="spring.application.name" defaultValue="localhost" />
+    <springProperty name="MAX_HISTORY" source="spring.logback.max.history" defaultValue="3" />
+    <springProperty name="LOG_HOME_DIR" source="spring.logback.log.dir" defaultValue="/opt/webapps/${SPRING_APPLICATION_NAME}/logs" />
+    <springProperty name="INSTANCE_ID" source="spring.cloud.client.ipAddress" defaultValue="127.0.0.1" />
+    <springProperty name="MSG_LEN" source="log.msg.length" defaultValue="2048"/>
+
+    <property name="LOG_HOME" value="${LOG_HOME_DIR}" />
+    <property name="LOG_HISTORY_HOME" value="${LOG_HOME}/history" />
+    <property name="BIZ_LOG" value="%d{HH:mm:ss.SSS} [${INSTANCE_ID},%X{X-B3-SpanId},%X{X-B3-TraceId}] %-5level %-36.36logger{36} %.-${MSG_LEN}msg%n" />
+    <property name="MON_LOG" value="%d{HH:mm:ss.SSS} [${INSTANCE_ID},%X{X-B3-SpanId},%X{X-B3-TraceId}] %-5level %.-${MSG_LEN}msg%n" />
+
+    <springProfile name="!dev">
+        <springProfile name="!dev-zf">
+            <appender name="infoAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOG_HOME}/info.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>${LOG_HISTORY_HOME}/info%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <maxHistory>${MAX_HISTORY}</maxHistory>
+                </rollingPolicy>
+                <encoder>
+                    <pattern>${BIZ_LOG}</pattern>
+                </encoder>
+                <filter class="com.yee.common.filter.LessThanOrEqualToFilter">
+                    <level>INFO</level>
+                </filter>
+            </appender>
+
+            <appender name="errorAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOG_HOME}/error.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>${LOG_HISTORY_HOME}/error%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <maxHistory>${MAX_HISTORY}</maxHistory>
+                </rollingPolicy>
+                <encoder>
+                    <pattern>${BIZ_LOG}</pattern>
+                </encoder>
+                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                    <level>WARN</level>
+                </filter>
+            </appender>
+
+            <appender name="monitorAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOG_HOME}/monitor.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <FileNamePattern>${LOG_HISTORY_HOME}/monitor%d{yyyy-MM-dd}.log</FileNamePattern>
+                    <maxHistory>${MAX_HISTORY}</maxHistory>
+                </rollingPolicy>
+                <encoder>
+                    <pattern>${MON_LOG}</pattern>
+                </encoder>
+            </appender>
+
+            <appender name="requestAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOG_HOME}/request.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <FileNamePattern>${LOG_HISTORY_HOME}/request%d{yyyy-MM-dd}.log</FileNamePattern>
+                    <maxHistory>${MAX_HISTORY}</maxHistory>
+                </rollingPolicy>
+                <encoder>
+                    <pattern>${MON_LOG}</pattern>
+                </encoder>
+            </appender>
+
+            <logger name="monitor" additivity="false">
+                <appender-ref ref="monitorAppender"/>
+            </logger>
+
+            <logger name="com.yee.common.filter.WebServerTraceFilter" additivity="false">
+                <appender-ref ref="requestAppender"/>
+            </logger>
+            <root level="INFO">
+                <appender-ref ref="errorAppender"/>
+                <appender-ref ref="infoAppender"/>
+            </root>
+        </springProfile>
+    </springProfile>
+
+    <springProfile name="dev">
+        <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${BIZ_LOG}</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="consoleAppender" />
+        </root>
+    </springProfile>
+
+</included>
